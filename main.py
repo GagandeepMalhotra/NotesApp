@@ -7,8 +7,8 @@ import json
 class NotesApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Local Notes App")
-        self.root.geometry("800x600")
+        self.root.title("Sticky Notes+")
+        self.root.geometry("500x500")
 
         self.notes_filename = "notes.json"
         self.current_note = {"id": str(uuid.uuid4()), "title": "Sticky Notes+ by Gagandeep Malhotra", "content": ""}
@@ -59,18 +59,29 @@ class NotesApp:
 
     def create_main_window(self):
         self.main_frame = tk.Frame(self.root, bg="#333333")
-        self.main_frame.pack(expand=True, fill="both")
+        self.main_frame.pack(expand=True, fill="both", padx=0, pady=0)
 
         self.title_label = tk.Label(
-            self.main_frame, text=self.current_note["title"], font=("Arial", 16), bg="#333333", fg="white"
+            self.main_frame, text=self.current_note["title"], font=("Segoe UI", 12), bg="#333333", fg="white"
         )
-        self.title_label.pack(anchor="w", padx=10, pady=5)
+        self.title_label.pack(anchor="w", padx=15, pady=(10, 0))
 
-        self.note_text = tk.Text(self.main_frame, wrap="word", font=("Arial", 12), bg="#333333", fg="white")
-        self.note_text.pack(expand=True, fill="both", padx=10, pady=5)
+        self.scrollbar = tk.Scrollbar(self.main_frame, orient="vertical")
+        
+        self.note_text = tk.Text(
+            self.main_frame, wrap="word", font=("Segoe UI", 12),
+            bg="#333333", fg="white", insertbackground="lightgrey",
+            highlightthickness=0, borderwidth=0,
+            yscrollcommand=self.scrollbar.set  # Connect scrollbar to the Text widget
+        )
+        self.note_text.pack(side="left", expand=True, fill="both", padx=0, pady=0)
+
+        self.scrollbar.pack(side="right", fill="y")
+        self.scrollbar.config(command=self.note_text.yview)  # Set scrollbar command
 
         self.note_text.insert("1.0", self.current_note["content"])
         self.note_text.bind("<KeyRelease>", self.auto_save)
+
 
     def create_bottom_toolbar(self):
         self.bottom_frame = tk.Frame(self.root, bg="#333333")
@@ -81,15 +92,22 @@ class NotesApp:
         )
         self.char_count_label.pack(side="left")
 
-        bold_button = tk.Button(self.bottom_frame, text="B", command=self.apply_bold)
-        bold_button.pack(side="right", padx=5)
+        underline_button = tk.Button(self.bottom_frame, text="U", command=self.apply_underline, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white")
+        underline_button.pack(side="right", padx=(0,10), ipadx=7)  # No padx needed for the last button
 
-        italic_button = tk.Button(self.bottom_frame, text="I", command=self.apply_italic)
-        italic_button.pack(side="right", padx=5)
+        italic_button = tk.Button(self.bottom_frame, text="I", command=self.apply_italic, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white")
+        italic_button.pack(side="right", padx=(2.5, 2.5), ipadx=10)
 
-        underline_button = tk.Button(self.bottom_frame, text="U", command=self.apply_underline)
-        underline_button.pack(side="right", padx=5)
+        bold_button = tk.Button(self.bottom_frame, text="B", command=self.apply_bold, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white")
+        bold_button.pack(side="right", padx=(5, 0), ipadx=8)  # Set ipadx to make the button wider
 
+        self.transparency_slider = tk.Scale(
+            self.bottom_frame, from_=0.1, to=1.0, resolution=0.1, orient="horizontal", bg="#222", fg="#111",
+            command=self.update_transparency, showvalue=0, highlightthickness=0, troughcolor="#222"
+        )
+        self.transparency_slider.set(1.0)  # Set default transparency to 1.0 (fully opaque)
+        self.transparency_slider.pack(side="right", padx=10)
+        
     def new_note(self):
         self.note_text.config(state="normal")
         new_note_title = simpledialog.askstring("New Note", "Enter a title for the new note:")
@@ -150,23 +168,28 @@ class NotesApp:
     def update_char_count(self):
         char_count = len(self.note_text.get("1.0", "end-1c"))
         self.char_count_label.config(text=f"Chars: {char_count}")
+        
+    def update_transparency(self, value):
+        transparency = float(value)
+        self.root.attributes("-alpha", transparency)
 
     def apply_format(self, tag_name, font_config=None, underline=False):
-        current_tags = self.note_text.tag_names(tk.SEL_FIRST)
-        if tag_name in current_tags:
-            self.note_text.tag_remove(tag_name, tk.SEL_FIRST, tk.SEL_LAST)
-        else:
-            self.note_text.tag_add(tag_name, tk.SEL_FIRST, tk.SEL_LAST)
-            if font_config:
-                self.note_text.tag_configure(tag_name, **font_config)
-            elif underline:
-                self.note_text.tag_configure(tag_name, underline=True)
+        if self.note_text.tag_ranges(tk.SEL):
+            current_tags = self.note_text.tag_names(tk.SEL_FIRST)
+            if tag_name in current_tags:
+                self.note_text.tag_remove(tag_name, tk.SEL_FIRST, tk.SEL_LAST)
+            else:
+                self.note_text.tag_add(tag_name, tk.SEL_FIRST, tk.SEL_LAST)
+                if font_config:
+                    self.note_text.tag_configure(tag_name, **font_config)
+                elif underline:
+                    self.note_text.tag_configure(tag_name, underline=True)
 
     def apply_bold(self):
-        self.apply_format("bold", font_config={"font": ("Arial", 12, "bold")})
+        self.apply_format("bold", font_config={"font": ("Segoe UI", 12, "bold")})
 
     def apply_italic(self):
-        self.apply_format("italic", font_config={"font": ("Arial", 12, "italic")})
+        self.apply_format("italic", font_config={"font": ("Segoe UI", 12, "italic")})
 
     def apply_underline(self):
         self.apply_format("underline", underline=True)
