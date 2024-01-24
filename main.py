@@ -1,5 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
+import time
+import uuid
+import json
 
 class NotesApp:
     def __init__(self, root):
@@ -7,15 +10,29 @@ class NotesApp:
         self.root.title("Local Notes App")
         self.root.geometry("800x600")
 
-        self.notes_filename = "notes.txt"
-        self.current_note = {"title": "Create new note", "content": ""}
+        self.notes_filename = "notes.json"
+        self.current_note = {"id": str(uuid.uuid4()), "title": "Sticky Notes+ by Gagandeep Malhotra", "content": ""}
         self.notes_list = []
-        self.current_note_index = 0
+        self.current_note_id = None
 
         self.create_widgets()
 
         # Load notes from file on application startup
         self.load_notes_from_file()
+
+        # Check if there are saved notes
+        if self.notes_list:
+            # Set the ID to the most recently edited note
+            self.current_note_id = self.get_most_recently_edited_note_id()
+            # Load the most recently edited note
+            self.load_current_note()
+
+        # Display "Create new note" if no notes exist
+        else:
+            self.note_text.insert("1.0", "\nCreate a New Note:\nFile > New Note")
+            self.note_text.tag_configure("center", justify='center')
+            self.note_text.tag_add("center", "1.0", "end")
+            self.note_text.config(state="disabled")
 
     def create_widgets(self):
         self.create_menu_bar()
@@ -53,11 +70,7 @@ class NotesApp:
         self.note_text.pack(expand=True, fill="both", padx=10, pady=5)
 
         self.note_text.insert("1.0", self.current_note["content"])
-        self.note_text.bind("<Key>", self.auto_save)
-
-        # Display "Create new note" if no notes exist
-        if not self.notes_list:
-            self.note_text.insert("1.0", "Create new note")
+        self.note_text.bind("<KeyRelease>", self.auto_save)
 
     def create_bottom_toolbar(self):
         self.bottom_frame = tk.Frame(self.root, bg="#333333")
@@ -68,29 +81,41 @@ class NotesApp:
         )
         self.char_count_label.pack(side="left")
 
-        bold_button = tk.Button(self.bottom_frame, text="Bold", command=self.apply_bold)
+        bold_button = tk.Button(self.bottom_frame, text="B", command=self.apply_bold)
         bold_button.pack(side="right", padx=5)
 
-        italic_button = tk.Button(self.bottom_frame, text="Italic", command=self.apply_italic)
+        italic_button = tk.Button(self.bottom_frame, text="I", command=self.apply_italic)
         italic_button.pack(side="right", padx=5)
 
-        underline_button = tk.Button(self.bottom_frame, text="Underline", command=self.apply_underline)
+        underline_button = tk.Button(self.bottom_frame, text="U", command=self.apply_underline)
         underline_button.pack(side="right", padx=5)
 
     def new_note(self):
+        self.note_text.config(state="normal")
         new_note_title = simpledialog.askstring("New Note", "Enter a title for the new note:")
         if new_note_title:
-            self.notes_list.append({"title": new_note_title, "content": ""})
-            self.current_note_index = len(self.notes_list) - 1
+            new_note_id = str(uuid.uuid4())  # Generate a unique ID for the new note
+            self.notes_list.append({"id": new_note_id, "title": new_note_title, "content": ""})
+            self.current_note_id = new_note_id
             self.load_current_note()
 
     def delete_note(self):
         confirm_delete = messagebox.askyesno("Delete Note", "Are you sure you want to delete this note?")
         if confirm_delete:
-            del self.notes_list[self.current_note_index]
-            if self.current_note_index >= len(self.notes_list):
-                self.current_note_index = len(self.notes_list) - 1
+            note_id_to_delete = self.current_note_id
+            self.notes_list = [note for note in self.notes_list if note["id"] != note_id_to_delete]
+
+            if not self.notes_list:
+                # If there are no more notes, set the current note to an empty note
+                self.current_note = {"id": "", "title": "", "content": ""}
+                self.current_note_id = None
+            else:
+                # Set the current note to the one with the most recent modification time
+                self.current_note_id = self.get_most_recently_edited_note_id()
+                self.load_current_note()
+
             self.load_current_note()
+            self.save_notes_to_file()
 
     def show_notes_list(self):
         notes_list_window = tk.Toplevel(self.root)
@@ -105,54 +130,75 @@ class NotesApp:
         def open_selected_note():
             selected_index = notes_listbox.curselection()
             if selected_index:
-                self.current_note_index = selected_index[0]
+                self.current_note_id = self.notes_list[selected_index[0]]["id"]
                 self.load_current_note()
                 notes_list_window.destroy()
 
         open_button = tk.Button(notes_list_window, text="Open Note", command=open_selected_note)
         open_button.pack(pady=10)
 
+    def get_most_recently_edited_note_id(self):
+        sorted_notes = sorted(self.notes_list, key=lambda x: x.get('last_modified', 0), reverse=True)
+        return sorted_notes[0]['id'] if sorted_notes else None
+
     def auto_save(self, event):
         self.current_note["content"] = self.note_text.get("1.0", "end-1c")
         self.update_char_count()
-        self.save_notes_to_file()  # Save notes to file on each change
+        self.current_note['last_modified'] = time.time()
+        self.save_notes_to_file()
 
     def update_char_count(self):
         char_count = len(self.note_text.get("1.0", "end-1c"))
         self.char_count_label.config(text=f"Chars: {char_count}")
 
+    def apply_format(self, tag_name, font_config=None, underline=False):
+        current_tags = self.note_text.tag_names(tk.SEL_FIRST)
+        if tag_name in current_tags:
+            self.note_text.tag_remove(tag_name, tk.SEL_FIRST, tk.SEL_LAST)
+        else:
+            self.note_text.tag_add(tag_name, tk.SEL_FIRST, tk.SEL_LAST)
+            if font_config:
+                self.note_text.tag_configure(tag_name, **font_config)
+            elif underline:
+                self.note_text.tag_configure(tag_name, underline=True)
+
     def apply_bold(self):
-        self.note_text.tag_add("bold", self.note_text.index(tk.SEL_FIRST), self.note_text.index(tk.SEL_LAST))
-        self.note_text.tag_configure("bold", font=("Arial", 12, "bold"))
+        self.apply_format("bold", font_config={"font": ("Arial", 12, "bold")})
 
     def apply_italic(self):
-        self.note_text.tag_add("italic", self.note_text.index(tk.SEL_FIRST), self.note_text.index(tk.SEL_LAST))
-        self.note_text.tag_configure("italic", font=("Arial", 12, "italic"))
+        self.apply_format("italic", font_config={"font": ("Arial", 12, "italic")})
 
     def apply_underline(self):
-        self.note_text.tag_add("underline", self.note_text.index(tk.SEL_FIRST), self.note_text.index(tk.SEL_LAST))
-        self.note_text.tag_configure("underline", underline=True)
+        self.apply_format("underline", underline=True)
+
 
     def load_notes_from_file(self):
         try:
             with open(self.notes_filename, "r") as file:
-                data = file.readlines()
-                self.notes_list = [eval(note.strip()) for note in data]
+                data = file.read()
+                self.notes_list = json.loads(data)
         except FileNotFoundError:
-            # Handle the case when the file doesn't exist yet
             pass
 
     def save_notes_to_file(self):
         with open(self.notes_filename, "w") as file:
-            for note in self.notes_list:
-                file.write(str(note) + "\n")
+            json.dump(self.notes_list, file)
 
     def load_current_note(self):
-        self.current_note = self.notes_list[self.current_note_index]
-        self.title_label.config(text=self.current_note["title"])
-        self.note_text.delete("1.0", "end")
-        self.note_text.insert("1.0", self.current_note["content"])
-        self.update_char_count()
+        if not self.notes_list:
+            self.title_label.config(text="Sticky Notes+ by Gagandeep Malhotra")
+            self.note_text.delete("1.0", "end")
+            self.note_text.insert("1.0", "\nCreate a New Note:\nFile > New Note")
+            self.note_text.tag_configure("center", justify='center')
+            self.note_text.tag_add("center", "1.0", "end")
+            self.note_text.config(state="disabled")
+        else:
+            self.current_note = next((note for note in self.notes_list if note["id"] == self.current_note_id), None)
+            if self.current_note:
+                self.title_label.config(text=self.current_note["title"])
+                self.note_text.delete("1.0", "end")
+                self.note_text.insert("1.0", self.current_note["content"])
+                self.update_char_count()
 
 if __name__ == "__main__":
     root = tk.Tk()
