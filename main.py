@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, simpledialog, messagebox
+from ctypes import windll
 import time
 import uuid
 import json
@@ -9,6 +10,7 @@ class NotesApp:
         self.root = root
         self.root.title("Sticky Notes+")
         self.root.geometry("500x500")
+        root.iconbitmap("stickynotes+.ico")
 
         self.notes_filename = "notes.json"
         self.current_note = {"id": str(uuid.uuid4()), "title": "Sticky Notes+ by Gagandeep Malhotra", "content": ""}
@@ -16,15 +18,15 @@ class NotesApp:
         self.current_note_id = None
 
         self.create_widgets()
+        self.create_zoom_slider()
 
         # Load notes from file on application startup
         self.load_notes_from_file()
 
         # Check if there are saved notes
         if self.notes_list:
-            # Set the ID to the most recently edited note
+
             self.current_note_id = self.get_most_recently_edited_note_id()
-            # Load the most recently edited note
             self.load_current_note()
 
         # Display "Create new note" if no notes exist
@@ -33,11 +35,17 @@ class NotesApp:
             self.note_text.tag_configure("center", justify='center')
             self.note_text.tag_add("center", "1.0", "end")
             self.note_text.config(state="disabled")
+        
+        # Binding key events
+        self.note_text.bind("<Control-b>", lambda event: self.apply_bold())
+        #self.note_text.bind("<Control-i>", lambda event: self.apply_italic())
+        self.note_text.bind("<Control-u>", lambda event: self.apply_underline())
 
     def create_widgets(self):
         self.create_menu_bar()
-        self.create_main_window()
         self.create_bottom_toolbar()
+        self.create_main_window()
+        
 
     def create_menu_bar(self):
         menu_bar = tk.Menu(self.root)
@@ -66,47 +74,50 @@ class NotesApp:
         )
         self.title_label.pack(anchor="w", padx=15, pady=(10, 0))
 
-        self.scrollbar = tk.Scrollbar(self.main_frame, orient="vertical")
-        
         self.note_text = tk.Text(
             self.main_frame, wrap="word", font=("Segoe UI", 12),
             bg="#333333", fg="white", insertbackground="lightgrey",
-            highlightthickness=0, borderwidth=0,
-            yscrollcommand=self.scrollbar.set  # Connect scrollbar to the Text widget
+            highlightthickness=0, borderwidth=0, undo=True, autoseparators=True, maxundo=-1
         )
-        self.note_text.pack(side="left", expand=True, fill="both", padx=0, pady=0)
-
-        self.scrollbar.pack(side="right", fill="y")
-        self.scrollbar.config(command=self.note_text.yview)  # Set scrollbar command
-
+        self.note_text.pack(side="left", expand=True, fill="both", padx=15, pady=0)
         self.note_text.insert("1.0", self.current_note["content"])
         self.note_text.bind("<KeyRelease>", self.auto_save)
 
-
     def create_bottom_toolbar(self):
-        self.bottom_frame = tk.Frame(self.root, bg="#333333")
+        self.bottom_frame = tk.Frame(self.root, bg="#333333", pady=1)
         self.bottom_frame.pack(side="bottom", fill="x")
+        
+        separator = tk.Frame(root, bg="#222", height=1, bd=0)
+        separator.pack(side="bottom", fill="x")
 
         self.char_count_label = tk.Label(
             self.bottom_frame, text="Chars: 0", bg="#333333", fg="white", padx=10
         )
         self.char_count_label.pack(side="left")
 
-        underline_button = tk.Button(self.bottom_frame, text="U", command=self.apply_underline, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white")
+        underline_button = tk.Button(self.bottom_frame, text="U", command=self.apply_underline, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'underline'))
         underline_button.pack(side="right", padx=(0,10), ipadx=7)  # No padx needed for the last button
 
-        italic_button = tk.Button(self.bottom_frame, text="I", command=self.apply_italic, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white")
+        italic_button = tk.Button(self.bottom_frame, text="I", command=self.apply_italic, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'italic'))
         italic_button.pack(side="right", padx=(2.5, 2.5), ipadx=10)
 
-        bold_button = tk.Button(self.bottom_frame, text="B", command=self.apply_bold, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white")
+        bold_button = tk.Button(self.bottom_frame, text="B", command=self.apply_bold, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'bold'))
         bold_button.pack(side="right", padx=(5, 0), ipadx=8)  # Set ipadx to make the button wider
 
         self.transparency_slider = tk.Scale(
-            self.bottom_frame, from_=0.1, to=1.0, resolution=0.1, orient="horizontal", bg="#222", fg="#111",
-            command=self.update_transparency, showvalue=0, highlightthickness=0, troughcolor="#222"
+            self.bottom_frame, from_=0.1, to=1.0, resolution=0.1, orient="horizontal", bg="#222", activebackground="#333",
+            command=self.update_transparency, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0
         )
         self.transparency_slider.set(1.0)  # Set default transparency to 1.0 (fully opaque)
-        self.transparency_slider.pack(side="right", padx=10)
+        self.transparency_slider.pack(side="right", padx=(0,10))
+        
+        # Load the opacity.png image
+        opacity_image = tk.PhotoImage(file="opacity.png")
+
+        # Create a label to display the image
+        opacity_label = tk.Label(self.bottom_frame, image=opacity_image, bg="#333333", height=15)
+        opacity_label.image = opacity_image  # To prevent image from being garbage collected
+        opacity_label.pack(side="right", padx=(10, 2))  # Adjust padx as needed
         
     def new_note(self):
         self.note_text.config(state="normal")
@@ -167,7 +178,7 @@ class NotesApp:
 
     def update_char_count(self):
         char_count = len(self.note_text.get("1.0", "end-1c"))
-        self.char_count_label.config(text=f"Chars: {char_count}")
+        self.char_count_label.config(text=f"Chars: {char_count}", font=('Segoe UI', 9))
         
     def update_transparency(self, value):
         transparency = float(value)
@@ -194,7 +205,27 @@ class NotesApp:
     def apply_underline(self):
         self.apply_format("underline", underline=True)
 
+    def create_zoom_slider(self):
+        self.zoom_slider = tk.Scale(
+            self.bottom_frame, from_=50, to=150, orient="horizontal", bg="#222", fg="#111", activebackground="#333",
+            command=self.update_zoom, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0
+        )
+        self.zoom_slider.set(100)  # Set default zoom to 100%
+        self.zoom_slider.pack(side="right", padx=(0, 0))
+        
+        # Load the zoom.png image
+        zoom_image = tk.PhotoImage(file="zoom.png")
 
+        # Create a label to display the image
+        zoom_label = tk.Label(self.bottom_frame, image=zoom_image, bg="#333333", height=15)
+        zoom_label.image = zoom_image  # To prevent image from being garbage collected
+        zoom_label.pack(side="right", padx=(10, 2)) 
+
+    def update_zoom(self, value):
+        zoom_level = int(value)
+        font_size = int(12 * zoom_level / 100)  # Adjust the base font size (12) based on zoom level
+        self.note_text.configure(font=("Segoe UI", font_size))
+        
     def load_notes_from_file(self):
         try:
             with open(self.notes_filename, "r") as file:
@@ -224,6 +255,7 @@ class NotesApp:
                 self.update_char_count()
 
 if __name__ == "__main__":
+    windll.shcore.SetProcessDpiAwareness(1)
     root = tk.Tk()
     app = NotesApp(root)
     root.mainloop()
