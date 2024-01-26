@@ -117,7 +117,7 @@ class NotesApp:
         # Create a label to display the image
         opacity_label = tk.Label(self.bottom_frame, image=opacity_image, bg="#333333", height=15)
         opacity_label.image = opacity_image  # To prevent image from being garbage collected
-        opacity_label.pack(side="right", padx=(10, 2))  # Adjust padx as needed
+        opacity_label.pack(side="right", padx=(12.5, 2.5))  # Adjust padx as needed
         
     def new_note(self):
         self.note_text.config(state="normal")
@@ -201,7 +201,7 @@ class NotesApp:
 
     def apply_italic(self):
         self.apply_format("italic", font_config={"font": ("Segoe UI", 12, "italic")})
-
+    
     def apply_underline(self):
         self.apply_format("underline", underline=True)
 
@@ -219,7 +219,7 @@ class NotesApp:
         # Create a label to display the image
         zoom_label = tk.Label(self.bottom_frame, image=zoom_image, bg="#333333", height=15)
         zoom_label.image = zoom_image  # To prevent image from being garbage collected
-        zoom_label.pack(side="right", padx=(10, 2)) 
+        zoom_label.pack(side="right", padx=(10, 2.5)) 
 
     def update_zoom(self, value):
         zoom_level = int(value)
