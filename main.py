@@ -4,7 +4,7 @@ from ctypes import windll
 import time
 import uuid
 import json
-
+import re
 
 class NotesApp:
     def __init__(self, root):
@@ -17,6 +17,8 @@ class NotesApp:
         self.current_note = {"id": str(uuid.uuid4()), "title": "Sticky Notes+ by Gagandeep Malhotra", "content": ""}
         self.notes_list = []
         self.current_note_id = None
+        self.match_indices = []
+        self.current_match_index = -1
 
         self.create_widgets()
 
@@ -111,6 +113,16 @@ class NotesApp:
         self.search_entry.bind("<FocusIn>", lambda event: self.on_entry_click())
         self.search_entry.bind("<FocusOut>", lambda event: self.on_focus_out())
 
+        self.matches_label = tk.Label(
+            self.bottom_frame, text="", bg="#333333", fg="white", padx=10
+        )
+        self.matches_label.pack(side="left", padx=(5, 0))
+        next_button = tk.Button(self.bottom_frame, text="Next", command=self.next_match, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9))
+        next_button.pack(side="right", padx=(5, 0), ipadx=5)
+
+        prev_button = tk.Button(self.bottom_frame, text="Prev", command=self.prev_match, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9))
+        prev_button.pack(side="right", padx=(5, 0), ipadx=5)
+                
         """
         undo_image = tk.PhotoImage(file="undo.png")
         undo_button = tk.Button(self.bottom_frame, image=undo_image, command=self.undo, bd=0, bg="#222", activebackground="#111")
@@ -202,12 +214,13 @@ class NotesApp:
 
             self.load_current_note()
             self.save_notes_to_file()
-            
+                
     def update_margin(self, value):
         margin_value = float(value)
         padding_x = int(margin_value)  # Adjust the padding based on the margin_slider value
         self.note_text.config(padx=(padding_x), pady=0)
-            
+
+    # Modify the search_text method
     def search_text(self, event=None):
         search_text = self.search_var.get().lower()
         self.note_text.tag_remove("search", "1.0", "end")
@@ -215,19 +228,56 @@ class NotesApp:
 
         if search_text:
             start = "1.0"
+            self.match_indices = []
+
             found_index = self.note_text.search(search_text, start, stopindex="end", nocase=True)
+            matches_count = 0  # Initialize the count of matches
 
             while found_index:
                 end = f"{found_index}+{len(search_text)}c"
                 self.note_text.tag_add("search", found_index, end)
+                self.match_indices.append(found_index)
                 start = end
                 found_index = self.note_text.search(search_text, start, stopindex="end", nocase=True)
 
-            self.note_text.tag_configure("search", background="yellow")
-            
-            if start:
-                self.note_text.see(start)
-            
+                matches_count += 1  # Increment the count for each match
+
+            self.note_text.tag_configure("search", background="yellow", foreground="black")
+
+            if self.match_indices:
+                self.current_match_index = 0
+                self.show_current_match()
+
+        self.update_matches_label()
+
+
+    # Add new methods for navigating through matches
+    def show_current_match(self):
+        if 0 <= self.current_match_index < len(self.match_indices):
+            start = self.match_indices[self.current_match_index]
+            end = f"{start}+{len(self.search_var.get())}c"
+            self.note_text.see(start)
+            self.note_text.tag_add("search", start, end)
+
+    def next_match(self):
+        if self.match_indices:
+            self.current_match_index = (self.current_match_index + 1) % len(self.match_indices)
+            self.show_current_match()
+            self.update_matches_label()
+
+    def prev_match(self):
+        if self.match_indices:
+            self.current_match_index = (self.current_match_index - 1) % len(self.match_indices)
+            self.show_current_match()
+            self.update_matches_label()
+    
+    def update_matches_label(self):
+        if self.match_indices:
+            total_matches = len(self.match_indices)
+            self.matches_label.config(text=f"{self.current_match_index + 1} of {total_matches}")
+        else:
+            self.matches_label.config(text="No Matches")
+                
     def undo(self):
         try:
             self.note_text.edit_undo()
@@ -251,6 +301,7 @@ class NotesApp:
         if self.search_entry.get() == "":
             self.search_entry.insert(0, "Find...")
             self.search_entry.configure(foreground="grey", font=('Segoe UI', 9, 'italic'))
+            self.matches_label.config(text="")
         
     def show_notes_list(self):
         notes_list_window = tk.Toplevel(self.root)
