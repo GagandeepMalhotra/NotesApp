@@ -10,7 +10,7 @@ class NotesApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Sticky Notes+")
-        self.root.geometry("550x550")
+        self.root.geometry("350x350")
         root.iconbitmap("stickynotes+.ico")
 
         self.notes_filename = "notes.json"
@@ -45,6 +45,7 @@ class NotesApp:
 
     def create_widgets(self):
         self.create_menu_bar()
+        self.create_bottom_toolbar_2()
         self.create_bottom_toolbar()
         self.create_main_window()
         
@@ -92,11 +93,6 @@ class NotesApp:
         
         separator = tk.Frame(root, bg="#222", height=1, bd=0)
         separator.pack(side="bottom", fill="x")
-
-        self.char_count_label = tk.Label(
-            self.bottom_frame, text="Chars: 0", bg="#333333", fg="white", padx=10
-        )
-        self.char_count_label.pack(side="left")
         
         # Load the search.png image
         search_image = tk.PhotoImage(file="search.png")
@@ -104,48 +100,30 @@ class NotesApp:
         # Create a label to display the image
         search_label = tk.Label(self.bottom_frame, image=search_image, bg="#333333", height=15)
         search_label.image = search_image  # To prevent image from being garbage collected
-        search_label.pack(side="left", padx=(5, 2.5))  # Adjust padx as needed
+        search_label.pack(side="left", padx=(10, 2.5))  # Adjust padx as needed
         
         self.search_var = tk.StringVar()
-        self.search_entry = tk.Entry(self.bottom_frame, textvariable=self.search_var, bg="#222", fg="white", insertbackground="lightgrey", bd=0, borderwidth=2.49, relief=tk.FLAT, width=8)
-        self.search_entry.pack(side="left", padx=(0,5), pady=0, fill="x", ipadx=5)
+        self.search_entry = tk.Entry(self.bottom_frame, textvariable=self.search_var, bg="#222", fg="white", insertbackground="lightgrey", bd=0, borderwidth=2.49, relief=tk.FLAT, width=4)
+        self.search_entry.pack(side="left", padx=(0), pady=0, fill="x", ipadx=5)
         self.search_entry.bind("<KeyRelease>", self.search_text)  # Bind the search function to the search bar input change
         self.search_entry.bind("<FocusIn>", lambda event: self.on_entry_click())
         self.search_entry.bind("<FocusOut>", lambda event: self.on_focus_out())
 
-        self.matches_label = tk.Label(
-            self.bottom_frame, text="", bg="#333333", fg="white", padx=10
-        )
-        self.matches_label.pack(side="left", padx=(5, 0))
-        next_button = tk.Button(self.bottom_frame, text="Next", command=self.next_match, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9))
-        next_button.pack(side="right", padx=(5, 0), ipadx=5)
-
-        prev_button = tk.Button(self.bottom_frame, text="Prev", command=self.prev_match, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9))
-        prev_button.pack(side="right", padx=(5, 0), ipadx=5)
-                
-        """
-        undo_image = tk.PhotoImage(file="undo.png")
-        undo_button = tk.Button(self.bottom_frame, image=undo_image, command=self.undo, bd=0, bg="#222", activebackground="#111")
-        undo_button.image = undo_image
-        undo_button.pack(side="left", padx=(5, 0), ipadx=4, ipady=4)
-
-        redo_image = tk.PhotoImage(file="redo.png")
-        redo_button = tk.Button(self.bottom_frame, image=redo_image, command=self.redo, bd=0, bg="#222", activebackground="#111")
-        redo_button.image = redo_image
-        redo_button.pack(side="left", padx=(2.5, 2.5), ipadx=4, ipady=4)
-        """
-        underline_button = tk.Button(self.bottom_frame, text="U", command=self.apply_underline, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'underline'))
-        underline_button.pack(side="right", padx=(0,10), ipadx=7)  # No padx needed for the last button
-
-        italic_button = tk.Button(self.bottom_frame, text="I", command=self.apply_italic, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'italic'))
-        italic_button.pack(side="right", padx=(2.5, 2.5), ipadx=10)
-
-        bold_button = tk.Button(self.bottom_frame, text="B", command=self.apply_bold, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'bold'))
-        bold_button.pack(side="right", padx=(5, 0), ipadx=8)  # Set ipadx to make the button wider
+        self.prev_button = tk.Button(self.bottom_frame, text="▲", command=self.prev_match, bd=0, bg="#222", fg="#F9F6EE", activebackground="#111", activeforeground="white", font=('Segoe UI', 9), state="disabled")
+        self.prev_button.pack(side="left", padx=(0, 0), ipadx=0)
         
+        self.next_button = tk.Button(self.bottom_frame, text="▼", command=self.next_match, bd=0, bg="#222", fg="#F9F6EE", activebackground="#111", activeforeground="white", font=('Segoe UI', 9), state="disabled")
+        self.next_button.pack(side="left", padx=(0, 0), ipadx=0)
+        
+        self.matches_label = tk.Label(
+            self.bottom_frame, text="", bg="#333333", fg="white", padx=5
+        )
+        self.matches_label.pack(side="left", padx=(0, 0))
+                
+
         self.transparency_slider = tk.Scale(
-            self.bottom_frame, from_=0.1, to=1.0, resolution=0.1, orient="horizontal", bg="#191919", activebackground="#111", length=50,
-            command=self.update_transparency, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=15
+            self.bottom_frame, from_=0.1, to=1.0, resolution=0.1, orient="horizontal", bg="#191919", activebackground="#111", length=40,
+            command=self.update_transparency, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=10
         )
         self.transparency_slider.set(1.0)  # Set default transparency to 1.0 (fully opaque)
         self.transparency_slider.pack(side="right", padx=(0,10))
@@ -156,11 +134,11 @@ class NotesApp:
         # Create a label to display the image
         opacity_label = tk.Label(self.bottom_frame, image=opacity_image, bg="#333333", height=15)
         opacity_label.image = opacity_image  # To prevent image from being garbage collected
-        opacity_label.pack(side="right", padx=(12.5, 2.5))  # Adjust padx as needed
+        opacity_label.pack(side="right", padx=(5, 2.5))  # Adjust padx as needed
         
         self.zoom_slider = tk.Scale(
-            self.bottom_frame, from_=50, to=150, orient="horizontal", bg="#191919", fg="#111", activebackground="#111", length=50,
-            command=self.update_zoom, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=15
+            self.bottom_frame, from_=50, to=150, orient="horizontal", bg="#191919", fg="#111", activebackground="#111", length=40,
+            command=self.update_zoom, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=10
         )
         self.zoom_slider.set(100)  # Set default zoom to 100%
         self.zoom_slider.pack(side="right", padx=(0, 0))
@@ -171,11 +149,11 @@ class NotesApp:
         # Create a label to display the image
         zoom_label = tk.Label(self.bottom_frame, image=zoom_image, bg="#333333", height=15)
         zoom_label.image = zoom_image  # To prevent image from being garbage collected
-        zoom_label.pack(side="right", padx=(10, 2.5)) 
+        zoom_label.pack(side="right", padx=(5, 2.5)) 
         
         self.margin_slider = tk.Scale(
-            self.bottom_frame, from_=0, to=200, orient="horizontal", bg="#191919", fg="#111", activebackground="#111", length=50,
-            command=self.update_margin, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=15
+            self.bottom_frame, from_=0, to=125, orient="horizontal", bg="#191919", fg="#111", activebackground="#111", length=40,
+            command=self.update_margin, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=10
         )
         self.margin_slider.set(0)  # Set default zoom to 100%
         self.margin_slider.pack(side="right", padx=(0, 0))
@@ -187,15 +165,68 @@ class NotesApp:
         margin_label = tk.Label(self.bottom_frame, image=margin_image, bg="#333333", height=15)
         margin_label.image = margin_image  # To prevent image from being garbage collected
         margin_label.pack(side="right", padx=(10, 2.5)) 
+    
+    def create_bottom_toolbar_2(self):
         
+        self.bottom_frame2 = tk.Frame(self.root, bg="#333333", pady=0)
+        self.bottom_frame2.pack(side="bottom", fill="x")
+        
+        self.char_count_label = tk.Label(
+            self.bottom_frame2, text="0 Words       0 Chars", bg="#333333", fg="white", padx=10
+        )
+        self.char_count_label.pack(side="left")
+
+        underline_button = tk.Button(self.bottom_frame2, text="U", command=self.apply_underline, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'underline'))
+        underline_button.pack(side="right", padx=(0, 10), ipadx=7)
+
+        italic_button = tk.Button(self.bottom_frame2, text="I", command=self.apply_italic, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'italic'))
+        italic_button.pack(side="right", padx=(2.5, 2.5), ipadx=10)
+
+        bold_button = tk.Button(self.bottom_frame2, text="B", command=self.apply_bold, bd=0, bg="#222", fg="white", activebackground="#111", activeforeground="white", font=('Segoe UI', 9, 'bold'))
+        bold_button.pack(side="right", padx=(5, 0), ipadx=8)
+        
+        """
+        undo_image = tk.PhotoImage(file="undo.png")
+        undo_button = tk.Button(self.bottom_frame, image=undo_image, command=self.undo, bd=0, bg="#222", activebackground="#111")
+        undo_button.image = undo_image
+        undo_button.pack(side="left", padx=(5, 0), ipadx=4, ipady=4)
+
+        redo_image = tk.PhotoImage(file="redo.png")
+        redo_button = tk.Button(self.bottom_frame, image=redo_image, command=self.redo, bd=0, bg="#222", activebackground="#111")
+        redo_button.image = redo_image
+        redo_button.pack(side="left", padx=(2.5, 2.5), ipadx=4, ipady=4)
+        """
+    
     def new_note(self):
-        self.note_text.config(state="normal")
-        new_note_title = simpledialog.askstring("New Note", "New Note Title:")
+        # Create a new window for entering the title
+        new_note_window = tk.Toplevel(self.root)
+        new_note_window.title("New Note")
+        new_note_window.iconbitmap("stickynotes+.ico")
+        new_note_window.minsize(150, 100)
+        new_note_window.resizable(False,False)
+        new_note_window.configure(bg='#333')
+
+        title_label = tk.Label(new_note_window, text="Enter Note Title:")
+        title_label.configure(bg='#333', fg='white')
+        title_label.pack(pady=(10,5))
+
+        title_entry = tk.Entry(new_note_window)
+        title_entry.configure(bg='#222', fg='white', insertbackground='white', highlightbackground="grey",)
+        title_entry.pack()
+
+        ok_button = tk.Button(new_note_window, text="OK", command=lambda: self.process_new_note(title_entry.get(), new_note_window))
+        ok_button.configure(bg='#333', fg='white', activebackground='#222', activeforeground='white')
+        ok_button.pack(fill="x", padx=12.5, pady=(10,0))
+
+    def process_new_note(self, new_note_title, new_note_window):
         if new_note_title:
             new_note_id = str(uuid.uuid4())  # Generate a unique ID for the new note
             self.notes_list.append({"id": new_note_id, "title": new_note_title, "content": ""})
             self.current_note_id = new_note_id
             self.load_current_note()
+            self.note_text.config(state="normal")
+
+        new_note_window.destroy()
 
     def delete_note(self):
         confirm_delete = messagebox.askyesno("Delete Note", "Confirm Delete?")
@@ -247,10 +278,25 @@ class NotesApp:
             if self.match_indices:
                 self.current_match_index = 0
                 self.show_current_match()
+            
+            self.update_matches_label()
+        
+        else:
+            self.match_indices = []
+            self.current_match_index = -1
+            self.matches_label.config(text="")
+        
+        self.update_prev_next_buttons_state()
 
-        self.update_matches_label()
 
-
+    def update_prev_next_buttons_state(self):
+        if self.match_indices:
+            self.prev_button.config(state="normal")
+            self.next_button.config(state="normal")
+        else:
+            self.prev_button.config(state="disabled")
+            self.next_button.config(state="disabled")
+        
     # Add new methods for navigating through matches
     def show_current_match(self):
         if 0 <= self.current_match_index < len(self.match_indices):
@@ -275,8 +321,14 @@ class NotesApp:
         if self.match_indices:
             total_matches = len(self.match_indices)
             self.matches_label.config(text=f"{self.current_match_index + 1} of {total_matches}")
-        else:
+        elif self.search_entry:
+            self.match_indices = []
+            self.current_match_index = -1
             self.matches_label.config(text="No Matches")
+        else:
+            self.match_indices = []
+            self.current_match_index = -1
+            self.matches_label.config(text="")
                 
     def undo(self):
         try:
@@ -345,8 +397,18 @@ class NotesApp:
         self.save_notes_to_file()
 
     def update_char_count(self):
-        char_count = len(self.note_text.get("1.0", "end-1c"))
-        self.char_count_label.config(text=f"Chars: {char_count}", font=('Segoe UI', 9))
+        text_content = self.note_text.get("1.0", "end-1c")
+        char_count = len(text_content)
+        word_count = len(re.findall(r'\b\w+\b', text_content))
+        
+        if word_count != 1 and char_count != 1:
+            count_text = f"{word_count} Words       {char_count} Chars"
+        elif word_count == 1 and char_count != 1:
+            count_text = f"{word_count} Word       {char_count} Chars"
+        else:
+            count_text = f"{word_count} Word       {char_count} Char"
+        
+        self.char_count_label.config(text=count_text, font=('Segoe UI', 9))
         
     def update_transparency(self, value):
         transparency = float(value)
@@ -409,6 +471,6 @@ class NotesApp:
 if __name__ == "__main__":
     windll.shcore.SetProcessDpiAwareness(1)
     root = tk.Tk()
-    root.minsize(550, 200)
+    root.minsize(325, 150)
     app = NotesApp(root)
     root.mainloop()
