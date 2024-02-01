@@ -7,6 +7,7 @@ import json
 import re
 
 class NotesApp:
+    #Initialize the NotesApp class, set up the main window and essential variables
     def __init__(self, root):
         self.root = root
         self.root.title("Sticky Notes+")
@@ -48,7 +49,7 @@ class NotesApp:
         self.create_bottom_toolbar()
         self.create_main_window()
         
-
+    #Create the menu bar with options like "New Note," "Delete Note," and "Exit"
     def create_menu_bar(self):
         menu_bar = tk.Menu(self.root)
 
@@ -65,6 +66,7 @@ class NotesApp:
 
         self.root.config(menu=menu_bar)
 
+    #Create the main window layout with title, text area, and other elements
     def create_main_window(self):
         self.main_frame = tk.Frame(self.root, bg="#333333")
         self.main_frame.pack(expand=True, fill="both", padx=0, pady=0)
@@ -84,6 +86,7 @@ class NotesApp:
         self.note_text.bind("<KeyRelease>", self.auto_save)
         self.on_focus_out()
 
+    #Create the bottom toolbar with buttons for search, navigation, and formatting options
     def create_bottom_toolbar(self):
         self.bottom_frame = tk.Frame(self.root, bg="#333333", pady=0)
         self.bottom_frame.pack(side="bottom", fill="x")
@@ -136,7 +139,7 @@ class NotesApp:
         undo_button.image = undo_image
         undo_button.pack(side="right", padx=(0, 0), ipadx=4, ipady=4)
                 
-    
+    #Create an additional bottom toolbar with sliders for transparency, zoom, and margin adjustments
     def create_bottom_toolbar_2(self):
         
         self.bottom_frame2 = tk.Frame(self.root, bg="#333333", pady=0)
@@ -185,6 +188,7 @@ class NotesApp:
         margin_label.image = margin_image
         margin_label.pack(side="right", padx=(0, 2.5)) 
     
+    #Open a window for creating a new note with a title entry and OK button
     def new_note(self):
         new_note_window = tk.Toplevel(self.root)
         new_note_window.title("New Note")
@@ -205,6 +209,7 @@ class NotesApp:
         ok_button.configure(bg='#333', fg='white', activebackground='#222', activeforeground='white')
         ok_button.pack(fill="x", padx=12.5, pady=(10,0))
 
+    #Process the creation of a new note by updating notes_list and loading the new note
     def process_new_note(self, new_note_title, new_note_window):
         if new_note_title:
             new_note_id = str(uuid.uuid4())
@@ -216,6 +221,7 @@ class NotesApp:
 
         new_note_window.destroy()
 
+    #Delete the currently selected note, updating notes_list and loading the most recent note
     def delete_note(self):
         confirm_delete = messagebox.askyesno("Delete Note", "Confirm Delete?")
         if confirm_delete:
@@ -232,13 +238,14 @@ class NotesApp:
 
             self.load_current_note()
             self.save_notes_to_file()
-                
+    
+    #Update the left margin of the text area based on the provided value            
     def update_margin(self, value):
         margin_value = float(value)
         padding_x = int(margin_value)
         self.note_text.config(padx=(padding_x), pady=0)
 
-
+    #Search for the entered text in the note and highlight occurrences
     def search_text(self, event=None):
         search_text = self.search_var.get().lower()
         self.note_text.tag_remove("search", "1.0", "end")
@@ -275,7 +282,7 @@ class NotesApp:
         
         self.update_prev_next_buttons_state()
 
-
+    # Update the state of previous and next buttons based on search results
     def update_prev_next_buttons_state(self):
         if self.match_indices:
             self.prev_button.config(state="normal")
@@ -283,7 +290,8 @@ class NotesApp:
         else:
             self.prev_button.config(state="disabled")
             self.next_button.config(state="disabled")
-        
+    
+    #Show the currently selected search match in the note
     def show_current_match(self):
         if 0 <= self.current_match_index < len(self.match_indices):
             start = self.match_indices[self.current_match_index]
@@ -291,18 +299,21 @@ class NotesApp:
             self.note_text.see(start)
             self.note_text.tag_add("search", start, end)
 
+    #Navigate to the next search match in the note
     def next_match(self):
         if self.match_indices:
             self.current_match_index = (self.current_match_index + 1) % len(self.match_indices)
             self.show_current_match()
             self.update_matches_label()
 
+    #Navigate to the previous search match in the note
     def prev_match(self):
         if self.match_indices:
             self.current_match_index = (self.current_match_index - 1) % len(self.match_indices)
             self.show_current_match()
             self.update_matches_label()
     
+    #Update the label displaying current match information
     def update_matches_label(self):
         if self.match_indices:
             total_matches = len(self.match_indices)
@@ -315,32 +326,37 @@ class NotesApp:
             self.match_indices = []
             self.current_match_index = -1
             self.matches_label.config(text="")
-                
+    
+    #Undo the last text edit in the note            
     def undo(self):
         try:
             self.note_text.edit_undo()
             self.update_char_count()
         except tk.TclError:
             pass
-
+        
+    #Redo the previously undone text edit in the note
     def redo(self):
         try:
             self.note_text.edit_redo()
             self.update_char_count()
         except tk.TclError:
             pass
-        
+    
+    #Handle the click event on the search entry to clear the placeholder text
     def on_entry_click(self):
         if self.search_entry.get() == "Find...":
             self.search_entry.delete(0, tk.END)
             self.search_entry.configure(foreground="white", font=('Segoe UI', 9))
 
+    #Handle the focus-out event on the search entry to show placeholder text if empty
     def on_focus_out(self):
         if self.search_entry.get() == "":
             self.search_entry.insert(0, "Find...")
             self.search_entry.configure(foreground="grey", font=('Segoe UI', 9, 'italic'))
             self.matches_label.config(text="")
-        
+    
+    #Open a window displaying the list of notes with an option to open a selected note
     def show_notes_list(self):
         notes_list_window = tk.Toplevel(self.root)
         notes_list_window.title("Notes List")
@@ -371,16 +387,19 @@ class NotesApp:
         open_button.configure(bg='#333', fg='white', activebackground='#222', activeforeground='white')
         open_button.pack(pady=10, fill="x", padx=10)
 
+    #Get the ID of the most recently edited note from the notes_list
     def get_most_recently_edited_note_id(self):
         sorted_notes = sorted(self.notes_list, key=lambda x: x.get('last_modified', 0), reverse=True)
         return sorted_notes[0]['id'] if sorted_notes else None
 
+    #Autosave the current note content and update last_modified timestamp
     def auto_save(self, event):
         self.current_note["content"] = self.note_text.get("1.0", "end-1c")
         self.update_char_count()
         self.current_note['last_modified'] = time.time()
         self.save_notes_to_file()
 
+    #Update the character count label based on the current note's content
     def update_char_count(self):
         text_content = self.note_text.get("1.0", "end-1c")
         char_count = len(text_content)
@@ -394,7 +413,8 @@ class NotesApp:
             count_text = f"{word_count} Word    {char_count} Char"
         
         self.char_count_label.config(text=count_text, font=('Segoe UI', 9))
-        
+    
+    #Update the transparency of the main window based on the provided value  
     def update_transparency(self, value):
         transparency = float(value)
         self.root.attributes("-alpha", transparency)
@@ -417,6 +437,7 @@ class NotesApp:
     def apply_italic(self):
         self.apply_format("italic", font_config={"font": ("Segoe UI", 12, "italic")})
     """
+    #Apply the underline formatting to the selected text in the note
     def apply_underline(self):
         sel_start = self.note_text.index(tk.SEL_FIRST)
         sel_end = self.note_text.index(tk.SEL_LAST)
@@ -424,12 +445,14 @@ class NotesApp:
         if sel_start and sel_end:
             self.note_text.tag_add("underline", sel_start, sel_end)
             self.note_text.tag_configure("underline", underline=True)
-        
+    
+    #Update the zoom level of the text area based on the slider value    
     def update_zoom(self, value):
         zoom_level = int(value)
         font_size = int(12 * zoom_level / 100) 
         self.note_text.configure(font=("Segoe UI", font_size))
-        
+    
+    #Load notes from a JSON file into the notes_list
     def load_notes_from_file(self):
         try:
             with open(self.notes_filename, "r") as file:
@@ -437,11 +460,13 @@ class NotesApp:
                 self.notes_list = json.loads(data)
         except FileNotFoundError:
             pass
-
+        
+    #Save the notes_list to a JSON file      
     def save_notes_to_file(self):
         with open(self.notes_filename, "w") as file:
             json.dump(self.notes_list, file)
 
+    #Load the content of the currently selected note into the main window
     def load_current_note(self):
         if not self.notes_list:
             self.title_label.config(text="Sticky Notes+ by Gagandeep Malhotra")
