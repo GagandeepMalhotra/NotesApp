@@ -155,6 +155,7 @@ class NotesApp:
             command=self.update_transparency, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=11
         )
         self.transparency_slider.set(1.0)
+        self.transparency_slider.pack(side="right", padx=(0, 10))
         
         opacity_image = tk.PhotoImage(file="opacity.png")
 
@@ -418,6 +419,7 @@ class NotesApp:
     def update_transparency(self, value):
         transparency = float(value)
         self.root.attributes("-alpha", transparency)
+        
     """
     def apply_format(self, tag_name, font_config=None, underline=False):
         if self.note_text.tag_ranges(tk.SEL):
@@ -437,6 +439,7 @@ class NotesApp:
     def apply_italic(self):
         self.apply_format("italic", font_config={"font": ("Segoe UI", 12, "italic")})
     """
+    
     #Apply the underline formatting to the selected text in the note
     def apply_underline(self):
         sel_start = self.note_text.index(tk.SEL_FIRST)
