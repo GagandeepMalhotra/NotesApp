@@ -10,7 +10,7 @@ class NotesApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Sticky Notes+")
-        self.root.geometry("350x350")
+        self.root.geometry("325x325")
         root.iconbitmap("stickynotes+.ico")
 
         self.notes_filename = "notes.json"
@@ -22,27 +22,26 @@ class NotesApp:
 
         self.create_widgets()
 
-        # Load notes from file on application startup
         self.load_notes_from_file()
 
-        # Check if there are saved notes
         if self.notes_list:
 
             self.current_note_id = self.get_most_recently_edited_note_id()
             self.load_current_note()
 
-        # Display "Create new note" if no notes exist
         else:
             self.note_text.insert("1.0", "\nCreate a New Note:\nFile > New Note")
             self.note_text.tag_configure("center", justify='center')
             self.note_text.tag_add("center", "1.0", "end")
             self.note_text.config(state="disabled")
         
+        """
         # Binding key events
         self.note_text.bind("<Control-b>", lambda event: self.apply_bold())
         #self.note_text.bind("<Control-i>", lambda event: self.apply_italic())
         self.note_text.bind("<Control-u>", lambda event: self.apply_underline())
-
+        """
+        
     def create_widgets(self):
         self.create_menu_bar()
         self.create_bottom_toolbar_2()
@@ -53,7 +52,6 @@ class NotesApp:
     def create_menu_bar(self):
         menu_bar = tk.Menu(self.root)
 
-        # File Menu
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(label="New Note", command=self.new_note)
         file_menu.add_command(label="Delete Note", command=self.delete_note)
@@ -61,7 +59,6 @@ class NotesApp:
         file_menu.add_command(label="Exit", command=self.root.destroy)
         menu_bar.add_cascade(label="File", menu=file_menu)
 
-        # View Menu
         view_menu = tk.Menu(menu_bar, tearoff=0)
         view_menu.add_command(label="Notes List", command=self.show_notes_list)
         menu_bar.add_cascade(label="View", menu=view_menu)
@@ -94,18 +91,16 @@ class NotesApp:
         separator = tk.Frame(root, bg="#222", height=1, bd=0)
         separator.pack(side="bottom", fill="x")
         
-        # Load the search.png image
         search_image = tk.PhotoImage(file="search.png")
 
-        # Create a label to display the image
         search_label = tk.Label(self.bottom_frame, image=search_image, bg="#333333", height=15)
-        search_label.image = search_image  # To prevent image from being garbage collected
-        search_label.pack(side="left", padx=(10, 2.5))  # Adjust padx as needed
+        search_label.image = search_image
+        search_label.pack(side="left", padx=(10, 2.5))
         
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(self.bottom_frame, textvariable=self.search_var, bg="#222", fg="white", insertbackground="lightgrey", bd=0, borderwidth=2.49, relief=tk.FLAT, width=4)
         self.search_entry.pack(side="left", padx=(0), pady=0, fill="x", ipadx=5)
-        self.search_entry.bind("<KeyRelease>", self.search_text)  # Bind the search function to the search bar input change
+        self.search_entry.bind("<KeyRelease>", self.search_text)
         self.search_entry.bind("<FocusIn>", lambda event: self.on_entry_click())
         self.search_entry.bind("<FocusOut>", lambda event: self.on_focus_out())
 
@@ -156,49 +151,41 @@ class NotesApp:
             self.bottom_frame2, from_=0.1, to=1.0, resolution=0.1, orient="horizontal", bg="#191919", activebackground="#111", length=33,
             command=self.update_transparency, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=11
         )
-        self.transparency_slider.set(1.0)  # Set default transparency to 1.0 (fully opaque)
-        self.transparency_slider.pack(side="right", padx=(0,10))
+        self.transparency_slider.set(1.0)
         
-        # Load the opacity.png image
         opacity_image = tk.PhotoImage(file="opacity.png")
 
-        # Create a label to display the image
         opacity_label = tk.Label(self.bottom_frame2, image=opacity_image, bg="#333333", height=15)
-        opacity_label.image = opacity_image  # To prevent image from being garbage collected
-        opacity_label.pack(side="right", padx=(5, 2.5))  # Adjust padx as needed
+        opacity_label.image = opacity_image
+        opacity_label.pack(side="right", padx=(5, 2.5))
         
         self.zoom_slider = tk.Scale(
             self.bottom_frame2, from_=50, to=150, orient="horizontal", bg="#191919", fg="#111", activebackground="#111", length=33,
             command=self.update_zoom, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=11
         )
-        self.zoom_slider.set(100)  # Set default zoom to 100%
+        self.zoom_slider.set(100)
         self.zoom_slider.pack(side="right", padx=(0, 0))
         
-        # Load the zoom.png image
         zoom_image = tk.PhotoImage(file="zoom.png")
 
-        # Create a label to display the image
         zoom_label = tk.Label(self.bottom_frame2, image=zoom_image, bg="#333333", height=15)
-        zoom_label.image = zoom_image  # To prevent image from being garbage collected
+        zoom_label.image = zoom_image
         zoom_label.pack(side="right", padx=(5, 2.5)) 
         
         self.margin_slider = tk.Scale(
             self.bottom_frame2, from_=0, to=125, orient="horizontal", bg="#191919", fg="#111", activebackground="#111", length=33,
             command=self.update_margin, showvalue=0, highlightthickness=0, troughcolor="#222", bd=0, sliderrelief="flat", sliderlength=11
         )
-        self.margin_slider.set(0)  # Set default zoom to 100%
+        self.margin_slider.set(0)
         self.margin_slider.pack(side="right", padx=(0, 0))
         
-        # Load the zoom.png image
         margin_image = tk.PhotoImage(file="margin.png")
 
-        # Create a label to display the image
         margin_label = tk.Label(self.bottom_frame2, image=margin_image, bg="#333333", height=15)
-        margin_label.image = margin_image  # To prevent image from being garbage collected
+        margin_label.image = margin_image
         margin_label.pack(side="right", padx=(0, 2.5)) 
     
     def new_note(self):
-        # Create a new window for entering the title
         new_note_window = tk.Toplevel(self.root)
         new_note_window.title("New Note")
         new_note_window.iconbitmap("stickynotes+.ico")
@@ -220,7 +207,7 @@ class NotesApp:
 
     def process_new_note(self, new_note_title, new_note_window):
         if new_note_title:
-            new_note_id = str(uuid.uuid4())  # Generate a unique ID for the new note
+            new_note_id = str(uuid.uuid4())
             self.notes_list.append({"id": new_note_id, "title": new_note_title, "content": ""})
             self.current_note_id = new_note_id
             self.load_current_note()
@@ -236,11 +223,10 @@ class NotesApp:
             self.notes_list = [note for note in self.notes_list if note["id"] != note_id_to_delete]
 
             if not self.notes_list:
-                # If there are no more notes, set the current note to an empty note
                 self.current_note = {"id": "", "title": "", "content": ""}
                 self.current_note_id = None
             else:
-                # Set the current note to the one with the most recent modification time
+                
                 self.current_note_id = self.get_most_recently_edited_note_id()
                 self.load_current_note()
 
@@ -249,10 +235,10 @@ class NotesApp:
                 
     def update_margin(self, value):
         margin_value = float(value)
-        padding_x = int(margin_value)  # Adjust the padding based on the margin_slider value
+        padding_x = int(margin_value)
         self.note_text.config(padx=(padding_x), pady=0)
 
-    # Modify the search_text method
+
     def search_text(self, event=None):
         search_text = self.search_var.get().lower()
         self.note_text.tag_remove("search", "1.0", "end")
@@ -263,7 +249,7 @@ class NotesApp:
             self.match_indices = []
 
             found_index = self.note_text.search(search_text, start, stopindex="end", nocase=True)
-            matches_count = 0  # Initialize the count of matches
+            matches_count = 0
 
             while found_index:
                 end = f"{found_index}+{len(search_text)}c"
@@ -272,7 +258,7 @@ class NotesApp:
                 start = end
                 found_index = self.note_text.search(search_text, start, stopindex="end", nocase=True)
 
-                matches_count += 1  # Increment the count for each match
+                matches_count += 1
 
             self.note_text.tag_configure("search", background="yellow", foreground="black")
 
@@ -298,7 +284,6 @@ class NotesApp:
             self.prev_button.config(state="disabled")
             self.next_button.config(state="disabled")
         
-    # Add new methods for navigating through matches
     def show_current_match(self):
         if 0 <= self.current_match_index < len(self.match_indices):
             start = self.match_indices[self.current_match_index]
@@ -363,7 +348,6 @@ class NotesApp:
         notes_list_window.minsize(225, 150)
         notes_list_window.configure(bg='#333')
 
-        # Disable resizing
         notes_list_window.resizable(False, False)
 
         notes_listbox = tk.Listbox(notes_list_window, highlightbackground="grey", highlightcolor="grey", highlightthickness=1)
@@ -434,7 +418,6 @@ class NotesApp:
         self.apply_format("italic", font_config={"font": ("Segoe UI", 12, "italic")})
     """
     def apply_underline(self):
-        #self.apply_format("underline", underline=True)
         sel_start = self.note_text.index(tk.SEL_FIRST)
         sel_end = self.note_text.index(tk.SEL_LAST)
 
@@ -444,7 +427,7 @@ class NotesApp:
         
     def update_zoom(self, value):
         zoom_level = int(value)
-        font_size = int(12 * zoom_level / 100)  # Adjust the base font size (12) based on zoom level
+        font_size = int(12 * zoom_level / 100) 
         self.note_text.configure(font=("Segoe UI", font_size))
         
     def load_notes_from_file(self):
