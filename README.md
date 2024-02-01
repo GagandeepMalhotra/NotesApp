@@ -20,7 +20,11 @@ Sticky Notes+ is a simple sticky notes application built with Python and Tkinter
 
 - **Notes List View**: Switch between notes.
 
-- **Delete Notes**: Delete notes.
+- **Delete Notes**: Delete existing notes.
+
+- **Auto Open Notes**: The most recently edited note is opened on application start.
+
+- **Locally Saved**: Notes are saved locally in a JSON file.
 
 ## Getting Started
 
