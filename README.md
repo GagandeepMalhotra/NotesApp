@@ -1,6 +1,6 @@
 # Sticky Notes+ - by Gagandeep Malhotra
 
-Sticky Notes+ is a simple sticky notes application built with Python and Tkinter. It contains some additional features compared to many other sticky notes application such as a search bar, custom text size, horizontal margins, and window transparency.
+Sticky Notes+ is a simple sticky notes application built with Python and Tkinter. I had created this application because I wanted features such as a search bar, custom text size, horizontal margins, and window transparency to be included in a notes application.
 
 ## Features
 
